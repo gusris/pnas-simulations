@@ -10,12 +10,13 @@ Structure of Mustafa's files:
 Axon ( Marker AIS (Marker Axon))
 The marker is a short and thin piece of axon that has been manually added.
 """
-from numpy import *
-from pylab import *
+import numpy as np
+import matplotlib.pyplot as plt
 from pyparsing import (CharsNotIn, Optional, Suppress, Word, Regex, Combine, Group, delimitedList,
                        ParseException, alphas, nums, ZeroOrMore, Literal, Forward)
 from os import listdir
 from os.path import isfile, join
+
 
 # Comments
 COMMENT = Regex(r";.*").setName("Neurolucida comment")
@@ -29,8 +30,8 @@ STRING = Suppress('"')+CharsNotIn('"')+Suppress('"')
 
 # Basic elements
 RGB = Suppress('RGB') + Suppress('(') + Group(INTEGER+Suppress(Optional(','))\
-                   + INTEGER+Suppress(Optional(','))\
-                   + INTEGER) + Suppress(')')
+                + INTEGER+Suppress(Optional(','))\
+                + INTEGER) + Suppress(')')
 
 VALUE = NUMBER | STRING | RGB | LABEL
 
@@ -46,43 +47,56 @@ NODE << Suppress('(') + Group(delimitedList(BRANCH,"|")) + Suppress(')')
 # File
 FILE = (Suppress(PROPERTY) + NODE).ignore(COMMENT)
 
-# Let's do it!
-path = "/Users/romain/Dropbox/Projects/Spike initiation/Collaborations/Maarten/Data/AIS reconstructions (.ASC)/"
-path1 = path+"Axo-dendritic/"
-path2 = path+"Axo-somatic/"
-filenames = [ (path1+f,f) for f in listdir(path1) if isfile(join(path1,f)) ] +\
-            [ (path2+f,f) for f in listdir(path2) if isfile(join(path2,f)) ]
+def main():
+    # Let's do it!
+    ##path = "/Users/romain/Dropbox/Projects/Spike initiation/Collaborations/Maarten/Data/AIS reconstructions (.ASC)/"
+    ##path1 = path+"Axo-dendritic/"
+    ##path2 = path+"Axo-somatic/"
+    ##filenames = [ (path1+f,f) for f in listdir(path1) if isfile(join(path1,f)) ] +\
+    ##            [ (path2+f,f) for f in listdir(path2) if isfile(join(path2,f)) ]
 
-#filename="2013-07-16_#1.asc"
-Ri = 150 / 100. # in Mohm.um
+    filenames = [
+        ("../2013-07-29_#1-axodendritic.ASC", "2013-07-29_#1-axodendritic.ASC"),
+        ("../2013-07-16_#1-axosomatic.ASC", "2013-07-16_#1-axosomatic.ASC")]
 
-for full_name,filename in filenames:
-    text= open(full_name).read()
-    parsed = FILE.parseString(text)
 
-    axon_start = array(list(parsed[0]['branch'])).T
-    AIS = array(list(parsed[0]['children'][1])).T
-    AIS_start = axon_start.shape[1]
-    axon = hstack((axon_start,AIS))
-    cpt_length = sum(diff(axon[:3,:])**2,axis=0)**.5
-    d = .5*(axon[3,:-1]+axon[3,1:])
+    #filename="2013-07-16_#1.asc"
+    Ri = 150 / 100. # in Mohm.um
 
-    # Plotting
-    plot(cumsum(cpt_length[:AIS_start+1]),d[:AIS_start+1],'k')
-    plot(sum(cpt_length[:AIS_start])+cumsum(cpt_length[AIS_start:]),d[AIS_start:],'r')
+    for full_file_path,filename in filenames:
+        handle_one_file(full_file_path, filename)
+    plt.show()
 
-    # Analysis
-    AIS_onset = sum(sum(diff(array(list(parsed[0]['branch']))[:,:3].T)**2,axis=0)**.5)
-    AIS_length = sum(sum(diff(array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) # should add length of first segment
-    AIS_onset_Ra = 4/pi*Ri * sum(cpt_length[:AIS_start+1]/d[:AIS_start+1]**2)
-    AIS_end_Ra = AIS_onset_Ra + 4/pi*Ri * sum((sum(diff(array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) /
-                                 (array(list(parsed[0]['children'][1]))[:-1,3].T)**2)
-    AIS_area = sum(cpt_length[AIS_start:]*pi*d[AIS_start:])
+def handle_one_file(file_path, filename):
+    with open(file_path, "r") as f:
+        text= f.read()
+        parsed = FILE.parseString(text)
 
-    # Ra calculated 5 um within the AIS
-    n = AIS_start + where(cumsum(cpt_length[AIS_start:])>5.)[0][0]
-    AIS_onset_Ra_5um = 4/pi*Ri * sum(cpt_length[:n]/d[:n]**2)
+        axon_start = np.array(list(parsed[0]['branch'])).T
+        AIS = np.array(list(parsed[0]['children'][1])).T
+        AIS_start = axon_start.shape[1]
+        axon = np.hstack((axon_start,AIS))
+        cpt_length = sum(np.diff(axon[:3,:])**2,axis=0)**.5
+        d = .5*(axon[3,:-1]+axon[3,1:])
 
-    print ( f"{filename}, {AIS_onset}, {AIS_length}, {AIS_onset_Ra}, {AIS_end_Ra}, {AIS_onset_Ra_5um}, {AIS_area}" )
+        # Plotting
+        plt.plot(np.cumsum(cpt_length[:AIS_start+1]),d[:AIS_start+1],'k')
+        plt.plot(sum(cpt_length[:AIS_start])+np.cumsum(cpt_length[AIS_start:]),d[AIS_start:],'r')
 
-show()
+        # Analysis
+        AIS_onset = sum(sum(np.diff(np.array(list(parsed[0]['branch']))[:,:3].T)**2,axis=0)**.5)
+        AIS_length = sum(sum(np.diff(np.array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) # should add length of first segment
+        AIS_onset_Ra = 4/np.pi*np.Ri * sum(cpt_length[:AIS_start+1]/d[:AIS_start+1]**2)
+        AIS_end_Ra = AIS_onset_Ra + 4/np.pi*np.Ri * sum((sum(np.diff(np.array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) /
+                                    (np.array(list(parsed[0]['children'][1]))[:-1,3].T)**2)
+        AIS_area = sum(cpt_length[AIS_start:]*np.pi*d[AIS_start:])
+
+        # Ra calculated 5 um within the AIS
+        n = AIS_start + np.where(np.cumsum(cpt_length[AIS_start:])>5.)[0][0]
+        AIS_onset_Ra_5um = 4/np.pi*np.Ri * sum(cpt_length[:n]/d[:n]**2)
+
+        print ( f"{filename}, {AIS_onset}, {AIS_length}, {AIS_onset_Ra}, {AIS_end_Ra}, {AIS_onset_Ra_5um}, {AIS_area}" )
+
+
+main()
+
