@@ -49,25 +49,20 @@ FILE = (Suppress(PROPERTY) + NODE).ignore(COMMENT)
 
 def main():
     # Let's do it!
-    ##path = "/Users/romain/Dropbox/Projects/Spike initiation/Collaborations/Maarten/Data/AIS reconstructions (.ASC)/"
-    ##path1 = path+"Axo-dendritic/"
-    ##path2 = path+"Axo-somatic/"
-    ##filenames = [ (path1+f,f) for f in listdir(path1) if isfile(join(path1,f)) ] +\
-    ##            [ (path2+f,f) for f in listdir(path2) if isfile(join(path2,f)) ]
-
-    filenames = [
-        ("../2013-07-29_#1-axodendritic.ASC", "2013-07-29_#1-axodendritic.ASC"),
-        ("../2013-07-16_#1-axosomatic.ASC", "2013-07-16_#1-axosomatic.ASC")]
-
-
-    #filename="2013-07-16_#1.asc"
-    Ri = 150 / 100. # in Mohm.um
+    path_to_base_dir = "../"
+    path1 = path_to_base_dir+"Axo-dendritic/"
+    path2 = path_to_base_dir+"Axo-somatic/"
+    filenames = [ (path1+f,f) for f in listdir(path1) if isfile(join(path1,f)) ] +\
+                [ (path2+f,f) for f in listdir(path2) if isfile(join(path2,f)) ]
 
     for full_file_path,filename in filenames:
         handle_one_file(full_file_path, filename)
     plt.show()
 
 def handle_one_file(file_path, filename):
+    #filename="2013-07-16_#1.asc"
+    Ri = 150 / 100. # in Mohm.um
+
     with open(file_path, "r") as f:
         text= f.read()
         parsed = FILE.parseString(text)
@@ -86,14 +81,14 @@ def handle_one_file(file_path, filename):
         # Analysis
         AIS_onset = sum(sum(np.diff(np.array(list(parsed[0]['branch']))[:,:3].T)**2,axis=0)**.5)
         AIS_length = sum(sum(np.diff(np.array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) # should add length of first segment
-        AIS_onset_Ra = 4/np.pi*np.Ri * sum(cpt_length[:AIS_start+1]/d[:AIS_start+1]**2)
-        AIS_end_Ra = AIS_onset_Ra + 4/np.pi*np.Ri * sum((sum(np.diff(np.array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) /
+        AIS_onset_Ra = 4/np.pi*Ri * sum(cpt_length[:AIS_start+1]/d[:AIS_start+1]**2)
+        AIS_end_Ra = AIS_onset_Ra + 4/np.pi*Ri * sum((sum(np.diff(np.array(list(parsed[0]['children'][1]))[:,:3].T)**2,axis=0)**.5) /
                                     (np.array(list(parsed[0]['children'][1]))[:-1,3].T)**2)
         AIS_area = sum(cpt_length[AIS_start:]*np.pi*d[AIS_start:])
 
         # Ra calculated 5 um within the AIS
         n = AIS_start + np.where(np.cumsum(cpt_length[AIS_start:])>5.)[0][0]
-        AIS_onset_Ra_5um = 4/np.pi*np.Ri * sum(cpt_length[:n]/d[:n]**2)
+        AIS_onset_Ra_5um = 4/np.pi*Ri * sum(cpt_length[:n]/d[:n]**2)
 
         print ( f"{filename}, {AIS_onset}, {AIS_length}, {AIS_onset_Ra}, {AIS_end_Ra}, {AIS_onset_Ra_5um}, {AIS_area}" )
 
