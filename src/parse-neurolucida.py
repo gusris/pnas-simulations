@@ -14,6 +14,8 @@ from numpy import *
 from pylab import *
 from pyparsing import (CharsNotIn, Optional, Suppress, Word, Regex, Combine, Group, delimitedList,
                        ParseException, alphas, nums, ZeroOrMore, Literal, Forward)
+from os import listdir
+from os.path import isfile, join
 
 # Comments
 COMMENT = Regex(r";.*").setName("Neurolucida comment")
@@ -45,8 +47,6 @@ NODE << Suppress('(') + Group(delimitedList(BRANCH,"|")) + Suppress(')')
 FILE = (Suppress(PROPERTY) + NODE).ignore(COMMENT)
 
 # Let's do it!
-from os import listdir
-from os.path import isfile, join
 path = "/Users/romain/Dropbox/Projects/Spike initiation/Collaborations/Maarten/Data/AIS reconstructions (.ASC)/"
 path1 = path+"Axo-dendritic/"
 path2 = path+"Axo-somatic/"
