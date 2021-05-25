@@ -83,6 +83,6 @@ for full_name,filename in filenames:
     n = AIS_start + where(cumsum(cpt_length[AIS_start:])>5.)[0][0]
     AIS_onset_Ra_5um = 4/pi*Ri * sum(cpt_length[:n]/d[:n]**2)
 
-    print filename,",",AIS_onset,",",AIS_length,",",AIS_onset_Ra,",",AIS_end_Ra,",",AIS_onset_Ra_5um,",",AIS_area
+    print ( f"{filename}, {AIS_onset}, {AIS_length}, {AIS_onset_Ra}, {AIS_end_Ra}, {AIS_onset_Ra_5um}, {AIS_area}" )
 
 show()
